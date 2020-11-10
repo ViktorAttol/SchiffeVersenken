@@ -5,7 +5,6 @@ import java.util.HashMap;
 
 public class SchiffeVersenkenImpl implements SchiffeVersenken {
     private Status status = Status.START;
-    private String activePlayer = null;
     private String player1 = null;
     private String player2 = null;
     private int shipPlaces = 8;
@@ -14,10 +13,10 @@ public class SchiffeVersenkenImpl implements SchiffeVersenken {
     HashMap<String, String> mapPlayer1 = new HashMap<>(); //player1 ships
     HashMap<String, String> mapPlayer2 = new HashMap<>(); //playe 2 ships
 
-    SchiffeVersenkenImpl(){
+    public SchiffeVersenkenImpl(){
         setAllowedSCoordinates(6);
     }
-    SchiffeVersenkenImpl(int shipPlaces, int boardSize){
+    public SchiffeVersenkenImpl(int shipPlaces, int boardSize){
         int size = boardSize;
         this.shipPlaces = shipPlaces;
         if(size > 16) size = 16;

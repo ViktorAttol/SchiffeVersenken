@@ -1,15 +1,21 @@
 package schiffeversenken;
 
-class BattleshipsBoardPosition {
+public class BattleshipsBoardPosition {
     private final String sCoordinate;
     private final int iCoordinate;
 
     private final String key;
 
-    BattleshipsBoardPosition(String sCoordinate, int iCoordinate){
+    public BattleshipsBoardPosition(String sCoordinate, int iCoordinate){
         this.sCoordinate = sCoordinate;
         this.iCoordinate = iCoordinate;
         this.key = sCoordinate + iCoordinate;
+    }
+
+    public BattleshipsBoardPosition(String key){
+        this.key = key;
+        this.sCoordinate = key.substring(0,1);
+        this.iCoordinate = Integer.parseInt(key.substring(1));
     }
 
     public String getsCoordinate() {
