@@ -28,7 +28,7 @@ public interface ProtocolEngine {
      */
     boolean getOracle() throws StatusException;
 
-    void subscribeGameSessionEstablishedListener(GameSessionEstablishedListener ocListener);
+    //void subscribeGameSessionEstablishedListener(GameSessionEstablishedListener ocListener);
 
-    void unsubscribeGameSessionEstablishedListener(GameSessionEstablishedListener ocListener);
+    //void unsubscribeGameSessionEstablishedListener(GameSessionEstablishedListener ocListener);
 }

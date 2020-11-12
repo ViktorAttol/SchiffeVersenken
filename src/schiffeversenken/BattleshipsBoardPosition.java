@@ -3,8 +3,9 @@ package schiffeversenken;
 public class BattleshipsBoardPosition {
     private final String sCoordinate;
     private final int iCoordinate;
-
     private final String key;
+
+    private Ship shipOnPosition = null;
 
     public BattleshipsBoardPosition(String sCoordinate, int iCoordinate){
         this.sCoordinate = sCoordinate;
@@ -28,5 +29,13 @@ public class BattleshipsBoardPosition {
 
     public String getKey() {
         return this.key;
+    }
+
+    public Ship getShipOnPosition() {
+        return this.shipOnPosition;
+    }
+
+    public void setShipOnPosition(Ship shipOnPosition) {
+        this.shipOnPosition = shipOnPosition;
     }
 }

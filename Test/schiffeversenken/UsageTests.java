@@ -7,8 +7,8 @@ import java.util.ArrayList;
 public class UsageTests {
     public static final String ALICE = "Alice";
     public static final String BOB = "Bob";
-    public static final int X = 6;
-    public static final int Y = 6;
+    public static final int XDIM = 6;
+    public static final int YDIM = 6;
     public static final int SHIPPLACES = 8;
     public static final String[] SHIPPOS1 = {"A", "0", "A", "1", "C", "2", "C", "3", "D", "0", "C", "5", "E", "2", "E", "3"};
     public static final String[] SHIPPOS2 = {"A", "0", "A", "5", "F", "0", "F", "5", "D", "0", "C", "5", "E", "2", "E", "3"};
@@ -30,6 +30,67 @@ public class UsageTests {
         }
         return shipPositions;
     }
+
+    @Test
+    public void setBoardSizeGoodTest1() throws GameException, StatusException{
+        SchiffeVersenken sv = getSchiffeVersenken();
+        Assert.assertTrue(sv.setBoardSize(7, 8));
+    }
+
+    @Test
+    public void setBoardSizeGoodTest2() throws GameException, StatusException{
+        SchiffeVersenken sv = getSchiffeVersenken();
+        Assert.assertTrue(sv.setBoardSize(5, 5));
+    }
+
+    @Test
+    public void setBoardSizeGoodTest3() throws GameException, StatusException{
+        SchiffeVersenken sv = getSchiffeVersenken();
+        Assert.assertTrue(sv.setBoardSize(16, 16));
+    }
+
+    @Test
+    public void setBoardSizeGoodTest4() throws GameException, StatusException{
+        SchiffeVersenken sv = getSchiffeVersenken();
+        Assert.assertTrue(sv.setBoardSize(5, 16));
+    }
+
+    @Test
+    public void setBoardSizeGoodTest5() throws GameException, StatusException{
+        SchiffeVersenken sv = getSchiffeVersenken();
+        Assert.assertTrue(sv.setBoardSize(16, 5));
+    }
+
+    @Test
+    public void setBoardSizeFailTest1() throws GameException, StatusException{
+        SchiffeVersenken sv = getSchiffeVersenken();
+        Assert.assertFalse(sv.setBoardSize(0, 0));
+    }
+
+    @Test
+    public void setBoardSizeFailTest2() throws GameException, StatusException{
+        SchiffeVersenken sv = getSchiffeVersenken();
+        Assert.assertFalse(sv.setBoardSize(-6, 8));
+    }
+
+    @Test
+    public void setBoardSizeFailTest3() throws GameException, StatusException{
+        SchiffeVersenken sv = getSchiffeVersenken();
+        Assert.assertFalse(sv.setBoardSize(6, -8));
+    }
+
+    @Test
+    public void setBoardSizeFailTest4() throws GameException, StatusException{
+        SchiffeVersenken sv = getSchiffeVersenken();
+        Assert.assertFalse(sv.setBoardSize(95, 18));
+    }
+
+    @Test
+    public void setBoardSizeFailTest5() throws GameException, StatusException{
+        SchiffeVersenken sv = getSchiffeVersenken();
+        Assert.assertFalse(sv.setBoardSize(Integer.MAX_VALUE + 1, Integer.MIN_VALUE -1));
+    }
+
 
     @Test (expected = NullPointerException.class)
     public void emptyPositionList() throws GameException, StatusException{
@@ -105,7 +166,7 @@ public class UsageTests {
     }
 
     //double position
-    @Test (expected = GameException.class)
+    @Test
     public void failureSet1() throws GameException, StatusException {
         SchiffeVersenken sv = getSchiffeVersenken();
 

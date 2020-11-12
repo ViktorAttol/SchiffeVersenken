@@ -9,6 +9,7 @@ public class SchiffeVersenkenImpl implements SchiffeVersenken {
     private String player2 = null;
     private int shipPlaces = 8;
     private int squareBoardSize = 6;
+    private int yDimBoardSize = 6;
     private ArrayList<String> allowedSCoordinates;
     HashMap<String, String> mapPlayer1 = new HashMap<>(); //player1 ships
     HashMap<String, String> mapPlayer2 = new HashMap<>(); //playe 2 ships
@@ -54,6 +55,11 @@ public class SchiffeVersenkenImpl implements SchiffeVersenken {
             throw new GameException("Invalid input from" + userName + "to attack! Input: " + position.getsCoordinate() + " " + position.getiCoordinate());
         }
         return prozessAttack(userName, position);
+    }
+
+    @Override
+    public boolean setBoardSize(int xSize, int ySize) throws GameException, StatusException {
+        return false;
     }
 
 

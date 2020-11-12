@@ -88,6 +88,11 @@ public class SVProtocolEngine implements SchiffeVersenken, Runnable, ProtocolEng
         return null; //todo
     }
 
+    @Override
+    public boolean setBoardSize(int xSize, int ySize) throws GameException, StatusException {
+        return false;
+    }
+
     private void deserializeAttack() throws GameException {
         DataInputStream dis = new DataInputStream(this.is);
         try {
@@ -136,6 +141,7 @@ public class SVProtocolEngine implements SchiffeVersenken, Runnable, ProtocolEng
         return false;
     }
 
+    /*
     @Override
     public void subscribeGameSessionEstablishedListener(GameSessionEstablishedListener ocListener) {
 
@@ -145,6 +151,10 @@ public class SVProtocolEngine implements SchiffeVersenken, Runnable, ProtocolEng
     public void unsubscribeGameSessionEstablishedListener(GameSessionEstablishedListener ocListener) {
 
     }
+
+     */
+
+
 
     @Override
     public void run() {
