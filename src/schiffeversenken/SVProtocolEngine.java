@@ -16,8 +16,12 @@ public class SVProtocolEngine implements SchiffeVersenken, Runnable, ProtocolEng
 
     private static final int METHOD_PLACE = 0;
     private static final int METHOD_ATTACK = 1;
+    private static final int RESULT_ATTACK = 2;
 
     private Thread protocolThread = null;
+    private Thread attackWaitThread = null;
+
+    private String resultAttack;
     private boolean oracle;
     private String partnerName;
 
@@ -41,6 +45,7 @@ public class SVProtocolEngine implements SchiffeVersenken, Runnable, ProtocolEng
         DataOutputStream dos = new DataOutputStream(this.os);
 
         try{
+            System.out.println("place called");
             dos.writeInt(METHOD_PLACE);
             dos.writeUTF(userName);
             dos.writeInt(positions.size());
@@ -59,6 +64,7 @@ public class SVProtocolEngine implements SchiffeVersenken, Runnable, ProtocolEng
         ArrayList<BattleshipsBoardPosition> positions = new ArrayList<>();
 
         try{
+            System.out.println("deserialize place called");
             String userName = dis.readUTF();
             int arraySize = dis.readInt();
             for (int i = 0; i < arraySize; i++) {
@@ -78,14 +84,25 @@ public class SVProtocolEngine implements SchiffeVersenken, Runnable, ProtocolEng
         DataOutputStream dos = new DataOutputStream(this.os);
 
         try{
+            System.out.println("attackPos called");
             dos.writeInt(METHOD_ATTACK);
             dos.writeUTF(userName);
             dos.writeUTF(position.getsCoordinate());
             dos.writeInt(position.getiCoordinate());
+
+        try{
+            this.attackWaitThread = Thread.currentThread();
+            Thread.sleep(Long.MAX_VALUE);
+        } catch (InterruptedException e) {
+           System.out.println("attack thread is arouse - result arrived");
+        }
+        this.attackWaitThread = null;
+
+        return this.resultAttack;
+
         } catch (IOException e) {
             throw new GameException("could not serialize command", e);
         }
-        return null; //todo
     }
 
     @Override
@@ -96,12 +113,17 @@ public class SVProtocolEngine implements SchiffeVersenken, Runnable, ProtocolEng
     private void deserializeAttack() throws GameException {
         DataInputStream dis = new DataInputStream(this.is);
         try {
+            System.out.println("deserialize attack");
+
             String userName = dis.readUTF();
             String sCoordinate = dis.readUTF();
             int iCoordinate = dis.readInt();
             BattleshipsBoardPosition position = new BattleshipsBoardPosition(sCoordinate, iCoordinate);
 
-            this.gameEngine.attackPos(userName, position);
+            String returnValue = this.gameEngine.attackPos(userName, position);
+            DataOutputStream dos = new DataOutputStream(this.os);
+            dos.writeInt(RESULT_ATTACK);
+            dos.writeUTF(returnValue);
         } catch (IOException | StatusException e) {
             throw new GameException("could not deserialize command ", e);
         }
@@ -116,10 +138,22 @@ public class SVProtocolEngine implements SchiffeVersenken, Runnable, ProtocolEng
             switch (commandID){
                 case METHOD_PLACE: this.deserializePlace(); break;
                 case METHOD_ATTACK: this.deserializeAttack(); break;
+                case RESULT_ATTACK: this.deserializeResultAttack(); break;
                 default: throw new GameException("Unknown method id: " + commandID);
             }
         } catch (IOException e) {
             throw new GameException("could not deserialize command ", e);
+        }
+    }
+
+    private void deserializeResultAttack() throws GameException {
+        DataInputStream dis = new DataInputStream(this.is);
+        try{
+            System.out.println("deserialize result of attack");
+            this.resultAttack = dis.readUTF();
+            this.attackWaitThread.interrupt();
+        } catch (IOException e) {
+            throw new GameException("Could not deserialize command", e);
         }
     }
 

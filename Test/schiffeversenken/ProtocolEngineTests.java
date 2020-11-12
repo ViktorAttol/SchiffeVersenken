@@ -95,7 +95,7 @@ public class ProtocolEngineTests {
         Assert.assertTrue(svReceiver.userName.equalsIgnoreCase(ALICE));
         Assert.assertEquals("F", svReceiver.result);
         Assert.assertEquals(sValue + Integer.toString(iValue), svReceiver.position.getKey());
-
+        //todo
     }
 
 @Test
@@ -131,9 +131,11 @@ public void placeShipsTest()throws GameException, StatusException, IOException,I
 
         Thread.sleep(1000);
 
-        // run test scenario
-
-
+        // run test scenario // todo
+        ArrayList<BattleshipsBoardPosition> positions = aliceSVProtocolEngine.placeShips(ALICE, buildPositions(SHIPPOS1));
+        ArrayList<BattleshipsBoardPosition> positions1 = aliceSVProtocolEngine.placeShips(BOB, buildPositions(SHIPPOS1));
+        BattleshipsBoardPosition testPos = new BattleshipsBoardPosition("A", 0);
+        Assert.assertEquals("F", aliceGameEngineSide.attackPos(BOB, testPos));
 
 }
 
@@ -164,5 +166,10 @@ public void placeShipsTest()throws GameException, StatusException, IOException,I
             this.result = "F";
             return "F";
         }
-    }
+
+            @Override
+            public boolean setBoardSize(int xSize, int ySize) throws GameException, StatusException {
+                return false;
+            }
+        }
 }

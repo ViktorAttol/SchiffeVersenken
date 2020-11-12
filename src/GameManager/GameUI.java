@@ -74,14 +74,14 @@ public class GameUI {
 
         // input shipPositions
         ArrayList<BattleshipsBoardPosition> inputBoardPositions = inputShipPositions(numberOfShipPlaces);
-
+        //svProtocolEngine.handleConnection();
         //share ship positions
         sv.placeShips(userName, inputBoardPositions);
         svProtocolEngine.placeShips(userName, inputBoardPositions);
         //svProtocolEngine.read();
 
 
-
+        //todo
         //pre gameloop
         printArray(gameState.getGameState());
         String currentPlayer = null;
@@ -92,25 +92,10 @@ public class GameUI {
         //gameloop
         while(returnValue == 0 || returnValue == -1){
             //for user
-            if(currentPlayer == userName){
-                String input;
-                do {
-                    input = scanner.nextLine();
-                    returnValue = 1;
-//                    returnValue = turn.setInput(input, currentPlayer);
-                    if(returnValue == -1)System.out.println("Invalid input!");
-                }while(returnValue == -1);
-                GameData gameData = new GameDataImpl(input,userName);
-                GameDataSender gameDataSender = new GameDataExchanger();
-                gameDataSender.sendGameData(gameData, tcpConnection.getOutputStream());
-            //for opponent
-            } else if(currentPlayer != userName){
-                GameDataReceiver gameDataReceiver = new GameDataExchanger();
-                GameData gameData = gameDataReceiver.receiveGameData(tcpConnection.getInputStream());
-//                returnValue = turn.setInput(gameData.getInputIndex(), currentPlayer);
-                returnValue = 1;
+            //todo
+            returnValue = 1;
 
-            }
+
 
             printArray(gameState.getGameState());
 
@@ -121,8 +106,7 @@ public class GameUI {
         }
 
 
-        scanner.close();
-        tcpConnection.getSocket().close();
+
     }
 
     private static void printArray(int[][] array){

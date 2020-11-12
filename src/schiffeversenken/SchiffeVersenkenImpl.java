@@ -148,5 +148,9 @@ public class SchiffeVersenkenImpl implements SchiffeVersenken {
             allowedSCoordinates.add(letters[i]);
         }
     }
+    //todo
+    private void showMap(){
+
+    }
 
 }
