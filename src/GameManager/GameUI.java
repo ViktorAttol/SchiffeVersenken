@@ -28,21 +28,21 @@ public class GameUI {
         Connection tcpConnection = null;
 
         //game relevant
-        System.out.println("Please enter player name!");
-        Scanner initializingScanner = new Scanner(System.in);
-        String userName = initializingScanner.nextLine();
+        String userName = null;
         String enemyUserName = null;
         int startNumber = 0;
+        boolean isActivePlayer = false;
         int numberOfShipPlaces = 8;
         GameState gameState = null;
 
         //todo find better solution
         //server
-        if(args.length == 3){
+        if(args.length == 2){
+            isActivePlayer = true;
             port = Integer.parseInt(args[0]);
             startNumber = Integer.parseInt(args[1]);
-            System.out.println("Please enter board size!");
-            dimX = Integer.parseInt(initializingScanner.nextLine());
+            //System.out.println("Please enter board size!");
+            //dimX = Integer.parseInt(initializingScanner.nextLine());
 
             if(dimX < 4) dimX = 4;
             if(dimX > 16) dimX = 16;
@@ -56,7 +56,7 @@ public class GameUI {
 
         }
         //client
-        if(args.length == 2){
+        if(args.length == 3){
             hostname = args[0];
             port = Integer.parseInt(args[1]);
             startNumber = Integer.parseInt(args[2]);
@@ -66,7 +66,8 @@ public class GameUI {
             gameState = gameDataReceiver.receiveGameLayout(tcpConnection.getInputStream());
             dimX = gameState.getGameLayoutHeight();
         }
-        initializingScanner.close();
+
+        userName = inputUsername();
 
         //initialize schiffeversenken und serealization
         SchiffeVersenken sv = new SchiffeVersenkenImpl();
@@ -85,24 +86,32 @@ public class GameUI {
         //pre gameloop
         printArray(gameState.getGameState());
         String currentPlayer = null;
-        int returnValue = 0;    //0 no winner and game continues, 1 game is won, 2 game over with draw, -1 for false input
+        String returnValue = "F";
         int round = 0;
         Scanner scanner = new Scanner(System.in);
 
         //gameloop
-        while(returnValue == 0 || returnValue == -1){
+        while(!returnValue.equals("W")){
             //for user
             //todo
-            returnValue = 1;
+            if(isActivePlayer == true){
+                BattleshipsBoardPosition attackPosition = getAttackPositionInput();
+                String returnValueSynchronTest = sv.attackPos(userName, attackPosition);
+                returnValue = svProtocolEngine.attackPos(userName, attackPosition);
+                if(!returnValueSynchronTest.equals(returnValue)){
+                    throw new GameException("out of sync!");
+                }
 
+            }
+            if(returnValue.equals("W")){
+                if(isActivePlayer == true) {
+                    System.out.println("You won the game!");
+                } else {
+                    System.out.println("You loose the game!");
+                }
 
-
-            printArray(gameState.getGameState());
-
-            if(returnValue == 1) System.out.println("Player " + currentPlayer + " winns the game!");
-            if(returnValue == 2) System.out.println("Game over without winner O_o...");
-
-            currentPlayer = changePlayer(currentPlayer);
+            }
+            swapActivePlayer(isActivePlayer);
         }
 
 
@@ -120,6 +129,8 @@ public class GameUI {
     }
 //todo überarbeiten
 
+
+
     private static String changePlayer(String player){
         if(player == player){
             return "";
@@ -128,17 +139,40 @@ public class GameUI {
         }
     }
 
+    private static BattleshipsBoardPosition getAttackPositionInput(){
+        System.out.println("Please Enter the Position of your next attack!");
+        Scanner scanner = new Scanner(System.in);
+        String input = scanner.nextLine();
+        BattleshipsBoardPosition position = new BattleshipsBoardPosition(input);
+        scanner.close();
+        return position;
+    }
+
+   private static boolean swapActivePlayer(boolean isActive){
+        if(isActive) return false;
+        return true;
+   }
+
     private static ArrayList<BattleshipsBoardPosition> inputShipPositions(int numberOfShipPlaces){
         // input shipPositions
         System.out.println("Please Enter " + numberOfShipPlaces + " positions for your ships. Bsb.: A0 B1 C5 ..."); //todo give information about borders
         ArrayList<BattleshipsBoardPosition> inputBoardPositions = new ArrayList<>();
-        Scanner scanner = new Scanner(System.in);
-        String inputShipPositions = scanner.nextLine();
+        //Scanner scanner = new Scanner(System.in);
+        //String inputShipPositions = scanner.nextLine();
+        String inputShipPositions = "A1 A0 A3 B4 C5 B0 D1 D2";
         String[] inputStringArray = inputShipPositions.split(" ");
         for (String input: inputStringArray) {
             inputBoardPositions.add(new BattleshipsBoardPosition(input));
         }
-        scanner.close();
+        //scanner.close();
         return inputBoardPositions;
+    }
+
+    private static String inputUsername(){
+        System.out.println("Please enter player name!");
+        Scanner scanner = new Scanner(System.in);
+        String userName = scanner.nextLine();
+        scanner.close();
+        return userName;
     }
 }

@@ -166,7 +166,7 @@ public class UsageTests {
     }
 
     //double position
-    @Test
+    @Test (expected = GameException.class)
     public void failureSet1() throws GameException, StatusException {
         SchiffeVersenken sv = getSchiffeVersenken();
 

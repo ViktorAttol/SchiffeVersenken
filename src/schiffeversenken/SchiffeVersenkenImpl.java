@@ -44,6 +44,8 @@ public class SchiffeVersenkenImpl implements SchiffeVersenken {
         if(player1 != null && player2 != null){
             changeStatusAfterShipPlacement();
         }
+        System.out.println(userName + " has placed his ships");
+        printMap(getHashmapForPlayer(userName, false));
         return returnPositions;
     }
 
@@ -54,7 +56,10 @@ public class SchiffeVersenkenImpl implements SchiffeVersenken {
         if(!checkIfCoordinatesAreInBounds(position.getsCoordinate(), position.getiCoordinate())){
             throw new GameException("Invalid input from" + userName + "to attack! Input: " + position.getsCoordinate() + " " + position.getiCoordinate());
         }
-        return prozessAttack(userName, position);
+        String result = prozessAttack(userName, position);
+        System.out.println(userName + " is attacking position: " + position.getKey());
+        printMap(getHashmapForPlayer(userName, true));
+        return result;
     }
 
     @Override
@@ -149,8 +154,19 @@ public class SchiffeVersenkenImpl implements SchiffeVersenken {
         }
     }
     //todo
-    private void showMap(){
-
+    private void printMap(HashMap<String, String> map){
+        for (int i = 0; i < this.squareBoardSize; i++) {
+            for (String sCoord: allowedSCoordinates) {
+                String coord = sCoord + i;
+                if(map.containsKey(coord)){
+                    System.out.print(map.get(coord) + " ");
+                } else {
+                    System.out.print("N ");
+                }
+            }
+            System.out.println("");
+        }
+        System.out.println("//////////////////////////////////////");
     }
 
 }
