@@ -15,7 +15,8 @@ public class ProtocolEngineTests {
     public static final int Y = 6;
     public static final int SHIPPLACES = 8;
     public static final int PORTNUMBER = 5555;
-    private static int port = 0;
+    public static final int TEST_THREAD_SLEEP_DURATION = 1000;
+    private static int port = 3333;
     public static final String[] SHIPPOS1 = {"A", "0", "A", "1", "C", "2", "C", "3", "D", "0", "C", "5", "E", "2", "E", "3"};
     public static final String[] SHIPPOS2 = {"A", "0", "A", "5", "F", "0", "F", "5", "D", "0", "C", "5", "E", "2", "E", "3"};
     public static final String[] SHIPPOS3 = {"A", "0", "A", "0", "C", "2", "C", "5", "D", "0", "C", "5", "E", "2", "E", "3"};
@@ -98,8 +99,42 @@ public class ProtocolEngineTests {
         //todo
     }
 
-@Test
-public void placeShipsTest()throws GameException, StatusException, IOException,InterruptedException{
+    @Test
+    public void integrationTest1() throws IOException, InterruptedException {
+        SchiffeVersenkenImpl aliceGameEngine = new SchiffeVersenkenImpl();
+        SVProtocolEngine aliceSVProtocolEngine = new SVProtocolEngine(aliceGameEngine, ALICE);
+
+        aliceGameEngine.setProtocolEngine(aliceSVProtocolEngine);
+
+        SchiffeVersenkenImpl bobGameEngine = new SchiffeVersenkenImpl();
+        SVProtocolEngine bobSVProtocolEngine = new SVProtocolEngine(bobGameEngine, BOB);
+
+        bobGameEngine.setProtocolEngine(bobSVProtocolEngine);
+
+        // Setup
+        int port = this.getPortNumber();
+        // this stream plays TCP server role during connection establishment
+        TCPStream aliceSide = new TCPStream(port, true, "aliceSide");
+        // this stream plays TCP client role during connection establishment
+        TCPStream bobSide = new TCPStream(port, false, "bobSide");
+        // start both stream
+        aliceSide.start(); bobSide.start();
+        // wait until TCP connection is established
+        aliceSide.waitForConnection(); bobSide.waitForConnection();
+
+        aliceSVProtocolEngine.handleConnection(aliceSide.getInputStream(), aliceSide.getOutputStream());
+        bobSVProtocolEngine.handleConnection(bobSide.getInputStream(), bobSide.getOutputStream());
+
+        Thread.sleep(TEST_THREAD_SLEEP_DURATION);
+
+        Assert.assertTrue(aliceGameEngine.getStatus() == bobGameEngine.getStatus());
+        aliceSVProtocolEngine.close();
+        bobSVProtocolEngine.close();
+
+    }
+
+    @Test
+    public void placeShipsTest()throws GameException, StatusException, IOException,InterruptedException{
 
         // alices`s game engine tester
         SVToReadTester aliceGameEngineTester = new SVToReadTester();

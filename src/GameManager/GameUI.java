@@ -70,25 +70,21 @@ public class GameUI {
         userName = inputUsername();
 
         //initialize schiffeversenken und serealization
-        SchiffeVersenken sv = new SchiffeVersenkenImpl();
-        SchiffeVersenken svProtocolEngine = new SVProtocolEngine(tcpConnection.getInputStream(), tcpConnection.getOutputStream(), sv);
-
-        // input shipPositions
+        SchiffeVersenkenImpl sv = new SchiffeVersenkenImpl();
         ArrayList<BattleshipsBoardPosition> inputBoardPositions = inputShipPositions(numberOfShipPlaces);
-        //svProtocolEngine.handleConnection();
+        SVProtocolEngine svProtocolEngine = new SVProtocolEngine(sv, userName);
+        sv.setProtocolEngine(svProtocolEngine);
+        // input shipPositions
+        svProtocolEngine.handleConnection(tcpConnection.getInputStream(), tcpConnection.getOutputStream());
         //share ship positions
         sv.placeShips(userName, inputBoardPositions);
-        svProtocolEngine.placeShips(userName, inputBoardPositions);
-        //svProtocolEngine.read();
+        ArrayList<BattleshipsBoardPosition> placePositionsResult = svProtocolEngine.placeShips(userName, inputBoardPositions);
 
 
         //todo
         //pre gameloop
         printArray(gameState.getGameState());
-        String currentPlayer = null;
         String returnValue = "F";
-        int round = 0;
-        Scanner scanner = new Scanner(System.in);
 
         //gameloop
         while(!returnValue.equals("W")){
@@ -144,7 +140,6 @@ public class GameUI {
         Scanner scanner = new Scanner(System.in);
         String input = scanner.nextLine();
         BattleshipsBoardPosition position = new BattleshipsBoardPosition(input);
-        scanner.close();
         return position;
     }
 
@@ -157,14 +152,14 @@ public class GameUI {
         // input shipPositions
         System.out.println("Please Enter " + numberOfShipPlaces + " positions for your ships. Bsb.: A0 B1 C5 ..."); //todo give information about borders
         ArrayList<BattleshipsBoardPosition> inputBoardPositions = new ArrayList<>();
-        //Scanner scanner = new Scanner(System.in);
-        //String inputShipPositions = scanner.nextLine();
-        String inputShipPositions = "A1 A0 A3 B4 C5 B0 D1 D2";
+        Scanner scanner = new Scanner(System.in);
+        String inputShipPositions = null;
+        inputShipPositions = scanner.nextLine();
+        //String inputShipPositions = "A1 A0 A3 B4 C5 B0 D1 D2";
         String[] inputStringArray = inputShipPositions.split(" ");
         for (String input: inputStringArray) {
             inputBoardPositions.add(new BattleshipsBoardPosition(input));
         }
-        //scanner.close();
         return inputBoardPositions;
     }
 
@@ -172,7 +167,6 @@ public class GameUI {
         System.out.println("Please enter player name!");
         Scanner scanner = new Scanner(System.in);
         String userName = scanner.nextLine();
-        scanner.close();
         return userName;
     }
 }

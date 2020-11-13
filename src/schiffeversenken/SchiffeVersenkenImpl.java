@@ -1,22 +1,27 @@
 package schiffeversenken;
 
+import network.GameSessionEstablishedListener;
+import network.ProtocolEngine;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class SchiffeVersenkenImpl implements SchiffeVersenken {
+public class SchiffeVersenkenImpl implements SchiffeVersenken, GameSessionEstablishedListener {
     private Status status = Status.START;
+
     private String player1 = null;
     private String player2 = null;
     private int shipPlaces = 8;
     private int squareBoardSize = 6;
     private int yDimBoardSize = 6;
+    private ProtocolEngine protocolEngine;
     private ArrayList<String> allowedSCoordinates;
     HashMap<String, String> mapPlayer1 = new HashMap<>(); //player1 ships
     HashMap<String, String> mapPlayer2 = new HashMap<>(); //playe 2 ships
-
     public SchiffeVersenkenImpl(){
         setAllowedSCoordinates(6);
     }
+
     public SchiffeVersenkenImpl(int shipPlaces, int boardSize){
         int size = boardSize;
         this.shipPlaces = shipPlaces;
@@ -24,7 +29,6 @@ public class SchiffeVersenkenImpl implements SchiffeVersenken {
         this.squareBoardSize = size;
         setAllowedSCoordinates(size);
     }
-
     @Override
     public ArrayList<BattleshipsBoardPosition> placeShips(String userName, ArrayList<BattleshipsBoardPosition> positions) throws GameException, StatusException {
         if(this.status != Status.START && this.status != Status.SHIPS_PLACEMENT) throw new StatusException("placeShips call but wrong status! Status: " + this.status);
@@ -34,8 +38,10 @@ public class SchiffeVersenkenImpl implements SchiffeVersenken {
 
         if(player1 == null){
             player1 = userName;
+            System.out.println("player1 == " + player1);
         } else if(player1 != userName && player2 == null){
             player2 = userName;
+            System.out.println("player2 == " + player2);
         } else{
             throw new GameException("Invalid try from " + userName + "to place ships!");
         }
@@ -52,7 +58,7 @@ public class SchiffeVersenkenImpl implements SchiffeVersenken {
     @Override
     public String attackPos(String userName, BattleshipsBoardPosition position) throws GameException, StatusException {
         if(this.status != Status.ACTIVE_Player1 && this.status != Status.ACTIVE_Player2) throw new StatusException("attackPos call but wrong status! Status: " + this.status);
-        if(userName == null || (player1 != userName && player2 != userName)) throw new GameException("Invalid User! User: " + userName);
+        //if(userName == null || (player1 != userName && player2 != userName)) throw new GameException("Invalid User! User: " + userName); //todo throws exception but playernames are proper set
         if(!checkIfCoordinatesAreInBounds(position.getsCoordinate(), position.getiCoordinate())){
             throw new GameException("Invalid input from" + userName + "to attack! Input: " + position.getsCoordinate() + " " + position.getiCoordinate());
         }
@@ -153,7 +159,18 @@ public class SchiffeVersenkenImpl implements SchiffeVersenken {
             allowedSCoordinates.add(letters[i]);
         }
     }
+
+    public void setProtocolEngine(ProtocolEngine protocolEngine) {
+        this.protocolEngine = protocolEngine;
+        //this.protocolEngine.subscribeGameSessionEstablishedListener(this);
+    }
+
     //todo
+
+    public Status getStatus() {
+        return status;
+    }
+
     private void printMap(HashMap<String, String> map){
         for (int i = 0; i < this.squareBoardSize; i++) {
             for (String sCoord: allowedSCoordinates) {
@@ -169,4 +186,8 @@ public class SchiffeVersenkenImpl implements SchiffeVersenken {
         System.out.println("//////////////////////////////////////");
     }
 
+    @Override
+    public void gameSessionEstablished(boolean oracle, String partnerName) {
+
+    }
 }

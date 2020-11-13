@@ -1,11 +1,13 @@
 package schiffeversenken;
 
+import network.GameSessionEstablishedListener;
 import network.ProtocolEngine;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.List;
 
-public class SVProtocolEngine implements SchiffeVersenken, Runnable, ProtocolEngine {
+public class SVProtocolEngine implements SchiffeVersenken, Runnable, ProtocolEngine{
     private String name;
     private OutputStream os;
     private InputStream is;
@@ -17,11 +19,13 @@ public class SVProtocolEngine implements SchiffeVersenken, Runnable, ProtocolEng
     private static final int METHOD_PLACE = 0;
     private static final int METHOD_ATTACK = 1;
     private static final int RESULT_ATTACK = 2;
+    private static final int RESULT_PLACE = 3;
 
     private Thread protocolThread = null;
     private Thread attackWaitThread = null;
-
+    private Thread placeWaitThread = null;
     private String resultAttack;
+    private ArrayList<BattleshipsBoardPosition> resultPlace;
     private boolean oracle;
     private String partnerName;
 
@@ -53,10 +57,19 @@ public class SVProtocolEngine implements SchiffeVersenken, Runnable, ProtocolEng
                 dos.writeUTF(position.getsCoordinate());
                 dos.writeInt(position.getiCoordinate());
             }
+            try{
+
+                this.placeWaitThread = Thread.currentThread();
+                Thread.sleep(Long.MAX_VALUE);
+            } catch (InterruptedException e) {
+                System.out.println("place thread is arouse - result arrived");
+            }
+            this.placeWaitThread = null;
+
+            return this.resultPlace;
         } catch (IOException e) {
             throw new GameException("could not serialize command", e);
         }
-        return null; //todo
     }
 
     private void deserializePlace() throws GameException{
@@ -74,6 +87,9 @@ public class SVProtocolEngine implements SchiffeVersenken, Runnable, ProtocolEng
                 positions.add(new BattleshipsBoardPosition(sCoordinate, iCoordinate));
             }
             this.gameEngine.placeShips(userName, positions);
+
+            DataOutputStream dos = new DataOutputStream(this.os);
+            dos.writeInt(RESULT_PLACE);
         } catch (IOException | StatusException e) {
             throw new GameException("could not deserialize command ", e);
         }
@@ -139,6 +155,7 @@ public class SVProtocolEngine implements SchiffeVersenken, Runnable, ProtocolEng
                 case METHOD_PLACE: this.deserializePlace(); break;
                 case METHOD_ATTACK: this.deserializeAttack(); break;
                 case RESULT_ATTACK: this.deserializeResultAttack(); break;
+                case RESULT_PLACE: this.deserializeResutlPlace(); break;
                 default: throw new GameException("Unknown method id: " + commandID);
             }
         } catch (IOException e) {
@@ -157,6 +174,23 @@ public class SVProtocolEngine implements SchiffeVersenken, Runnable, ProtocolEng
         }
     }
 
+    private void deserializeResutlPlace() throws GameException{
+        System.out.println("deserialize result place");
+        this.resultPlace = null;
+        this.placeWaitThread.interrupt();
+        /*
+
+        DataInputStream dis = new DataInputStream(this.is);
+        try{
+            System.out.println("deserialize result place");
+            this.resultAttack = dis.readUTF();
+        } catch (IOException e) {
+            throw new GameException("Could not deserialize command", e);
+        }
+
+         */
+    }
+
     @Override
     public void handleConnection(InputStream is, OutputStream os) throws IOException {
         this.is = is;
@@ -167,6 +201,8 @@ public class SVProtocolEngine implements SchiffeVersenken, Runnable, ProtocolEng
 
     @Override
     public void close() throws IOException {
+        if(this.is != null) this.is.close();
+        if(this.os != null) this.os.close();
 
     }
 
@@ -175,23 +211,24 @@ public class SVProtocolEngine implements SchiffeVersenken, Runnable, ProtocolEng
         return false;
     }
 
-    /*
-    @Override
+    private List<GameSessionEstablishedListener> sessionCreatedListenerList = new ArrayList<>();
+    //@Override
     public void subscribeGameSessionEstablishedListener(GameSessionEstablishedListener ocListener) {
-
+        this.sessionCreatedListenerList.add(ocListener);
     }
 
-    @Override
+    //@Override
     public void unsubscribeGameSessionEstablishedListener(GameSessionEstablishedListener ocListener) {
-
+        this.sessionCreatedListenerList.remove(ocListener);
     }
 
-     */
+
 
 
 
     @Override
     public void run() {
+
         try{
             while(true){
                 this.read();
