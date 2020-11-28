@@ -6,6 +6,7 @@ import network.ProtocolEngine;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 public class SVProtocolEngine implements SchiffeVersenken, Runnable, ProtocolEngine{
     private String name;
@@ -137,6 +138,7 @@ public class SVProtocolEngine implements SchiffeVersenken, Runnable, ProtocolEng
             BattleshipsBoardPosition position = new BattleshipsBoardPosition(sCoordinate, iCoordinate);
 
             String returnValue = this.gameEngine.attackPos(userName, position);
+
             DataOutputStream dos = new DataOutputStream(this.os);
             dos.writeInt(RESULT_ATTACK);
             dos.writeUTF(returnValue);
@@ -146,7 +148,7 @@ public class SVProtocolEngine implements SchiffeVersenken, Runnable, ProtocolEng
     }
 
 
-    public void read() throws GameException{
+    public boolean read() throws GameException{
         DataInputStream dis = new DataInputStream(this.is);
 
         try{
@@ -155,12 +157,19 @@ public class SVProtocolEngine implements SchiffeVersenken, Runnable, ProtocolEng
                 case METHOD_PLACE: this.deserializePlace(); break;
                 case METHOD_ATTACK: this.deserializeAttack(); break;
                 case RESULT_ATTACK: this.deserializeResultAttack(); break;
-                case RESULT_PLACE: this.deserializeResutlPlace(); break;
+                case RESULT_PLACE: this.deserializeResultPlace(); break;
                 default: throw new GameException("Unknown method id: " + commandID);
             }
         } catch (IOException e) {
-            throw new GameException("could not deserialize command ", e);
+            System.err.println("read: could not deserialize command");
+            try {
+                this.close();
+            } catch (IOException ioException) {
+                // ignore
+            }
+            return false;
         }
+        return true;
     }
 
     private void deserializeResultAttack() throws GameException {
@@ -171,10 +180,11 @@ public class SVProtocolEngine implements SchiffeVersenken, Runnable, ProtocolEng
             this.attackWaitThread.interrupt();
         } catch (IOException e) {
             throw new GameException("Could not deserialize command", e);
+
         }
     }
 
-    private void deserializeResutlPlace() throws GameException{
+    private void deserializeResultPlace() throws GameException{
         System.out.println("deserialize result place");
         this.resultPlace = null;
         this.placeWaitThread.interrupt();
@@ -208,7 +218,7 @@ public class SVProtocolEngine implements SchiffeVersenken, Runnable, ProtocolEng
 
     @Override
     public boolean getOracle() throws StatusException {
-        return false;
+        return this.oracle;
     }
 
     private List<GameSessionEstablishedListener> sessionCreatedListenerList = new ArrayList<>();
@@ -225,17 +235,63 @@ public class SVProtocolEngine implements SchiffeVersenken, Runnable, ProtocolEng
 
 
 
-
     @Override
     public void run() {
+        System.out.println("Protocol Engine started - flip a coin");
+        long seed = this.hashCode() * System.currentTimeMillis();
+        Random random = new Random(seed);
 
-        try{
-            while(true){
-                this.read();
+        int localInt = 0, remoteInt = 0;
+        try {
+            DataOutputStream dos = new DataOutputStream(this.os);
+            DataInputStream dis = new DataInputStream(this.is);
+            do {
+                localInt = random.nextInt();
+                //this.log("flip and take number " + localInt);
+                dos.writeInt(localInt);
+                remoteInt = dis.readInt();
+            } while(localInt == remoteInt);
+
+            this.oracle = localInt < remoteInt;
+            //this.log("Flipped a coin and got an oracle == " + this.oracle);
+            //this.oracleSet = true;
+
+            // finally - exchange names
+            dos.writeUTF(this.name);
+            this.partnerName = dis.readUTF();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
+        // call listener
+        if(this.sessionCreatedListenerList != null && !this.sessionCreatedListenerList.isEmpty()) {
+            for(GameSessionEstablishedListener oclistener : this.sessionCreatedListenerList) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Thread.sleep(1); // block a moment to let read thread start - just in case
+                        } catch (InterruptedException e) {
+                            // will not happen
+                        }
+                        oclistener.gameSessionEstablished(
+                                SVProtocolEngine.this.oracle,
+                                SVProtocolEngine.this.partnerName);
+                    }
+                }).start();
+            }
+        }
+
+        try {
+            boolean again = true;
+            while(again) {
+                again = this.read();
             }
         } catch (GameException e) {
             System.err.println("exception called in protocol engine thread - fatal and stop");
             e.printStackTrace();
+            // leave while - end thread
         }
     }
 }

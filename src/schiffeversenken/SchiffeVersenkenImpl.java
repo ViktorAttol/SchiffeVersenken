@@ -1,24 +1,41 @@
 package schiffeversenken;
 
+import network.ShipsPlacedListener;
 import network.GameSessionEstablishedListener;
 import network.ProtocolEngine;
+import view.PrintStreamView;
+import view.SVPrintStreamView;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
-public class SchiffeVersenkenImpl implements SchiffeVersenken, GameSessionEstablishedListener {
+public class SchiffeVersenkenImpl implements SchiffeVersenken, GameSessionEstablishedListener, SVLocalBoard{
     private Status status = Status.START;
 
-    private String player1 = null;
-    private String player2 = null;
+    private String localPlayer = null;
+    private boolean isActive = false;
+    private String remotePlayer = null;
+    private boolean localShipsPlaced = false;
+    private boolean remoteShipsPlaced = false;
+
+
+
+    private boolean allShipsPlaced = false;
+
     private int shipPlaces = 8;
     private int squareBoardSize = 6;
     private int yDimBoardSize = 6;
     private ProtocolEngine protocolEngine;
     private ArrayList<String> allowedSCoordinates;
-    HashMap<String, String> mapPlayer1 = new HashMap<>(); //player1 ships
-    HashMap<String, String> mapPlayer2 = new HashMap<>(); //playe 2 ships
+    HashMap<String, String> localMap = new HashMap<>(); //player1 ships
+    HashMap<String, String> remoteMap = new HashMap<>(); //playe 2 ships
     public SchiffeVersenkenImpl(){
+        setAllowedSCoordinates(6);
+    }
+
+    public SchiffeVersenkenImpl(String username){
+        this.localPlayer = username;
         setAllowedSCoordinates(6);
     }
 
@@ -35,43 +52,81 @@ public class SchiffeVersenkenImpl implements SchiffeVersenken, GameSessionEstabl
         if(userName == null) throw new GameException("userName == null");
         if(positions.size() != shipPlaces) throw new GameException("Invalid ArrayList size for ship positions from " + userName + ". Size should be: " + shipPlaces + ", but is " + positions.size());
         if(positions == null) throw new GameException("placeShips: positions == null");
+        if(!userName.equals(localPlayer)) remotePlayer = userName;
+        if(userName.equals(localPlayer)){
+            SchiffeVersenken sv = (SVProtocolEngine)protocolEngine;
+            sv.placeShips(this.localPlayer,positions);
+        }
 
-        if(player1 == null){
-            player1 = userName;
-            System.out.println("player1 == " + player1);
-        } else if(player1 != userName && player2 == null){
-            player2 = userName;
-            System.out.println("player2 == " + player2);
-        } else{
-            throw new GameException("Invalid try from " + userName + "to place ships!");
-        }
-        changeStatusToShipPlacement();
         ArrayList<BattleshipsBoardPosition> returnPositions = fillHashmapWithShipPositions(userName, positions);
-        if(player1 != null && player2 != null){
-            changeStatusAfterShipPlacement();
-        }
-        System.out.println(userName + " has placed his ships");
+
+
         printMap(getHashmapForPlayer(userName, false));
+        //protocolEngine.
+        if(userName.equals(localPlayer)) localShipsPlaced = true;
+        if(userName.equals(remotePlayer)) remoteShipsPlaced = true;
+        if(localShipsPlaced && remoteShipsPlaced){
+            allShipsPlaced = true;
+            if(this.isActive) this.status = Status.ACTIVE_LOCAL;
+            else this.status = Status.ACTIVE_REMOTE;
+            //todo change state to local or remote player
+        }
+        notifyShipsPlaced(userName);
         return returnPositions;
     }
 
     @Override
+    public ArrayList<BattleshipsBoardPosition> placeShips(ArrayList<BattleshipsBoardPosition> positions) throws GameException, StatusException {
+        return placeShips(localPlayer, positions);
+    }
+
+    @Override
     public String attackPos(String userName, BattleshipsBoardPosition position) throws GameException, StatusException {
-        if(this.status != Status.ACTIVE_Player1 && this.status != Status.ACTIVE_Player2) throw new StatusException("attackPos call but wrong status! Status: " + this.status);
+        if(this.status != Status.ACTIVE_LOCAL && this.status != Status.ACTIVE_REMOTE) throw new StatusException("attackPos call but wrong status! Status: " + this.status);
         //if(userName == null || (player1 != userName && player2 != userName)) throw new GameException("Invalid User! User: " + userName); //todo throws exception but playernames are proper set
+        if((userName == localPlayer && this.status == Status.ACTIVE_REMOTE) || (userName == remotePlayer && this.status == Status.ACTIVE_LOCAL)) throw new StatusException("attackPos calle in other players move");
         if(!checkIfCoordinatesAreInBounds(position.getsCoordinate(), position.getiCoordinate())){
             throw new GameException("Invalid input from" + userName + "to attack! Input: " + position.getsCoordinate() + " " + position.getiCoordinate());
         }
         String result = prozessAttack(userName, position);
+        if(userName.equals(this.localPlayer)){
+            SchiffeVersenken sv = (SVProtocolEngine)protocolEngine;
+            sv.attackPos(this.localPlayer, position);
+        }
+
         System.out.println(userName + " is attacking position: " + position.getKey());
         printMap(getHashmapForPlayer(userName, true));
+
+        if(userName != localPlayer) notifyBoardChanged();
+
+        if(result.equals("W")){
+            if(hasWon()){
+                System.out.println(this.localPlayer + " has won the game!");
+                this.status = Status.ENDED;
+            }
+            if(hasLost()){
+                System.out.println(this.localPlayer + " has lost the game!");
+                this.status = Status.ENDED;
+            }
+            return result;
+        }
+        if(status == Status.ACTIVE_LOCAL){
+            status = Status.ACTIVE_REMOTE;
+            this.isActive = false;
+        }
+        else {
+            status = Status.ACTIVE_LOCAL;
+            this.isActive = true;
+        }
         return result;
     }
 
     @Override
-    public boolean setBoardSize(int xSize, int ySize) throws GameException, StatusException {
-        return false;
+    public boolean attackPos(BattleshipsBoardPosition position) throws GameException, StatusException {
+        attackPos(localPlayer, position);
+        return true;
     }
+
 
 
     private String prozessAttack(String userName, BattleshipsBoardPosition position) throws GameException{
@@ -115,6 +170,11 @@ public class SchiffeVersenkenImpl implements SchiffeVersenken, GameSessionEstabl
         return returnPositions;
     }
 
+    @Override
+    public boolean setBoardSize(int xSize, int ySize) throws GameException, StatusException {
+        return false;
+    }
+
     private boolean checkIfCoordinatesAreInBounds(String sCoord, int iCoord){
         if(allowedSCoordinates.contains(sCoord) && iCoord >= 0 && iCoord < squareBoardSize){
             return true;
@@ -123,12 +183,12 @@ public class SchiffeVersenkenImpl implements SchiffeVersenken, GameSessionEstabl
     }
 
     private HashMap<String, String> getHashmapForPlayer(String userName, boolean isAttacking){
-        if(userName == player1){
-            if(isAttacking) return mapPlayer2;
-            return mapPlayer1;
+        if(userName == localPlayer){
+            if(isAttacking) return remoteMap;
+            return localMap;
         } else {
-            if(isAttacking) return mapPlayer1;
-            return mapPlayer2;
+            if(isAttacking) return localMap;
+            return remoteMap;
         }
     }
 
@@ -137,20 +197,7 @@ public class SchiffeVersenkenImpl implements SchiffeVersenken, GameSessionEstabl
         return true;
     }
 
-    private boolean startPlayerCalculation(int numberServer, int numberClient){
-        if((numberServer + numberClient) % 2 == 0){
-            return true;
-        }
-        return false;
-    }
 
-    private void changeStatusToShipPlacement(){
-        this.status = Status.SHIPS_PLACEMENT;
-    }
-
-    private void changeStatusAfterShipPlacement(){
-        this.status = Status.ACTIVE_Player1;
-    }
 
     private void setAllowedSCoordinates(int size){
         String[] letters = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P"};
@@ -162,13 +209,52 @@ public class SchiffeVersenkenImpl implements SchiffeVersenken, GameSessionEstabl
 
     public void setProtocolEngine(ProtocolEngine protocolEngine) {
         this.protocolEngine = protocolEngine;
-        //this.protocolEngine.subscribeGameSessionEstablishedListener(this);
+        this.protocolEngine.subscribeGameSessionEstablishedListener(this);
     }
 
     //todo
 
     public Status getStatus() {
-        return status;
+        return this.status;
+    }
+
+    @Override
+    public boolean isActive() {
+        return this.isActive;
+    }
+
+    @Override
+    public boolean hasWon() {
+        if(remoteMap.containsValue("O")) return false;
+        return true;
+    }
+
+    @Override
+    public boolean hasLost() {
+
+        if(!localMap.containsValue("O")) return true;
+        return false;
+    }
+
+    private List<LocalBoardChangedListener> boardChangeListenerList = new ArrayList<>();
+    @Override
+    public void subscribeChangeListener(LocalBoardChangedListener changeListener) {
+        this.boardChangeListenerList.add(changeListener);
+    }
+
+    private void notifyBoardChanged() {
+        // are there any listeners ?
+        if(this.boardChangeListenerList == null || this.boardChangeListenerList.isEmpty()) return;
+
+        // yes - there are - create a thread and inform them
+        (new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for(LocalBoardChangedListener listener : SchiffeVersenkenImpl.this.boardChangeListenerList) {
+                    listener.changed();
+                }
+            }
+        })).start();
     }
 
     private void printMap(HashMap<String, String> map){
@@ -189,5 +275,46 @@ public class SchiffeVersenkenImpl implements SchiffeVersenken, GameSessionEstabl
     @Override
     public void gameSessionEstablished(boolean oracle, String partnerName) {
 
+    }
+
+    public PrintStreamView getPrintStreamView(){
+        return new SVPrintStreamView(); //todo
+    }
+
+    public boolean areAllShipsPlaced() {
+        return this.allShipsPlaced;
+    }
+
+    private List<ShipsPlacedListener> shipsPlacedListenerList = new ArrayList<>();
+
+    @Override
+    public void subscribeAllShipsPlacedListener(ShipsPlacedListener shipsPlacedListener) {
+        this.shipsPlacedListenerList.add(shipsPlacedListener);
+    }
+
+    @Override
+    public void setInitializationValues(boolean localIsStarting, String remoteName) {
+        this.remotePlayer = remoteName;
+        if(localIsStarting) this.isActive = true;
+        this.status = Status.SHIPS_PLACEMENT;
+
+    }
+
+    private void notifyShipsPlaced(String userName) {
+        // are there any listeners ?
+        if(this.shipsPlacedListenerList == null || this.shipsPlacedListenerList.isEmpty()) return;
+
+        // yes - there are - create a thread and inform them
+        (new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for(ShipsPlacedListener listener : SchiffeVersenkenImpl.this.shipsPlacedListenerList) {
+                    listener.shipsPlaced(userName);
+                }
+            }
+        })).start();
+    }
+    public boolean hasPlacedShips(){
+        return this.localShipsPlaced;
     }
 }

@@ -1,17 +1,18 @@
 package GameManager;
 
-import dataExchanger.*;
 import schiffeversenken.*;
-import tcp.Client;
-import tcp.Connection;
-import tcp.Server;
-import tcp.TCPConnector;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Scanner;
 
-public class GameUI {
+public class GameUI{
+    public static void main(String[] args) throws IOException, InterruptedException, GameException, StatusException {
+        Ocean ocean = new Ocean();
+        if(ocean.runGame(args)) System.out.println("Game finished");
+        else System.out.println("Undefiened problems occured, game not finished");
+    }
+/*
+    static boolean isActivePlayer = false;
+    static String  enemyAttackResult = "";
 
     public static void main(String[] args) throws IOException, InterruptedException, GameException, StatusException {
         if(args.length < 1 || args.length > 3){
@@ -79,7 +80,7 @@ public class GameUI {
         //share ship positions
         sv.placeShips(userName, inputBoardPositions);
         ArrayList<BattleshipsBoardPosition> placePositionsResult = svProtocolEngine.placeShips(userName, inputBoardPositions);
-
+        svProtocolEngine.subscribeAttackPosListener(this);
 
         //todo
         //pre gameloop
@@ -97,17 +98,19 @@ public class GameUI {
                 if(!returnValueSynchronTest.equals(returnValue)){
                     throw new GameException("out of sync!");
                 }
-
-            }
-            if(returnValue.equals("W")){
-                if(isActivePlayer == true) {
-                    System.out.println("You won the game!");
-                } else {
-                    System.out.println("You loose the game!");
+                checkForWin(returnValue);
+                swapActivePlayer(isActivePlayer);
+            } else if(isActivePlayer == false) {
+                if (!enemyAttackResult.equals("")) {
+                    returnValue = enemyAttackResult;
+                    checkForWin(returnValue);
+                    swapActivePlayer(isActivePlayer);
                 }
-
             }
-            swapActivePlayer(isActivePlayer);
+
+            if(returnValue.equals("W")){
+               break;
+            }
         }
 
 
@@ -169,4 +172,20 @@ public class GameUI {
         String userName = scanner.nextLine();
         return userName;
     }
+
+    @Override
+    public void attackResult(String attackResult) {
+        enemyAttackResult = attackResult;
+    }
+    private static void checkForWin(String result){
+        if(result.equals("W")){
+            if(isActivePlayer == true) {
+                System.out.println("You won the game!");
+            } else {
+                System.out.println("You loose the game!");
+            }
+        }
+    }
+
+ */
 }

@@ -3,6 +3,7 @@ package schiffeversenken;
 import java.util.ArrayList;
 
 public interface SchiffeVersenken {
+    int DEFAULT_PORT = 6907;
 
     /**
      * Method will ask the Player for input to set the position of his ships
@@ -13,6 +14,7 @@ public interface SchiffeVersenken {
      * @throws StatusException can only be called if game hasn`t started yet
      */
     ArrayList<BattleshipsBoardPosition> placeShips(String userName, ArrayList<BattleshipsBoardPosition> positions) throws GameException, StatusException;
+    //ArrayList<BattleshipsBoardPosition> placeShips(ArrayList<BattleshipsBoardPosition> positions) throws GameException, StatusException;
 
     /**
      * attack at position
@@ -24,6 +26,8 @@ public interface SchiffeVersenken {
      */
     String attackPos(String userName, BattleshipsBoardPosition position) throws GameException, StatusException;
 
+    //String attackPos(BattleshipsBoardPosition position) throws GameException, StatusException;
+
     /**
      *  Sets game boards dimensions, can only be called once
      * @param xSize
@@ -33,4 +37,5 @@ public interface SchiffeVersenken {
      * @throws StatusException if setBoardSize is called in wrong status
      */
     boolean setBoardSize(int xSize, int ySize) throws GameException, StatusException;
+
 }
