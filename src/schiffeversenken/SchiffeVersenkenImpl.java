@@ -19,8 +19,6 @@ public class SchiffeVersenkenImpl implements SchiffeVersenken, GameSessionEstabl
     private boolean localShipsPlaced = false;
     private boolean remoteShipsPlaced = false;
 
-
-
     private boolean allShipsPlaced = false;
 
     private int shipPlaces = 8;
@@ -60,9 +58,8 @@ public class SchiffeVersenkenImpl implements SchiffeVersenken, GameSessionEstabl
 
         ArrayList<BattleshipsBoardPosition> returnPositions = fillHashmapWithShipPositions(userName, positions);
 
-
         printMap(getHashmapForPlayer(userName, false));
-        //protocolEngine.
+
         if(userName.equals(localPlayer)) localShipsPlaced = true;
         if(userName.equals(remotePlayer)) remoteShipsPlaced = true;
         if(localShipsPlaced && remoteShipsPlaced){
@@ -126,8 +123,6 @@ public class SchiffeVersenkenImpl implements SchiffeVersenken, GameSessionEstabl
         attackPos(localPlayer, position);
         return true;
     }
-
-
 
     private String prozessAttack(String userName, BattleshipsBoardPosition position) throws GameException{
         HashMap<String, String> mapTempPositions = getHashmapForPlayer(userName, true);
@@ -198,7 +193,6 @@ public class SchiffeVersenkenImpl implements SchiffeVersenken, GameSessionEstabl
     }
 
 
-
     private void setAllowedSCoordinates(int size){
         String[] letters = {"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P"};
         allowedSCoordinates = new ArrayList<>();
@@ -211,8 +205,6 @@ public class SchiffeVersenkenImpl implements SchiffeVersenken, GameSessionEstabl
         this.protocolEngine = protocolEngine;
         this.protocolEngine.subscribeGameSessionEstablishedListener(this);
     }
-
-    //todo
 
     public Status getStatus() {
         return this.status;
@@ -314,6 +306,7 @@ public class SchiffeVersenkenImpl implements SchiffeVersenken, GameSessionEstabl
             }
         })).start();
     }
+
     public boolean hasPlacedShips(){
         return this.localShipsPlaced;
     }

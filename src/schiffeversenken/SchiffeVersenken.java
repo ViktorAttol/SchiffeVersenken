@@ -14,7 +14,6 @@ public interface SchiffeVersenken {
      * @throws StatusException can only be called if game hasn`t started yet
      */
     ArrayList<BattleshipsBoardPosition> placeShips(String userName, ArrayList<BattleshipsBoardPosition> positions) throws GameException, StatusException;
-    //ArrayList<BattleshipsBoardPosition> placeShips(ArrayList<BattleshipsBoardPosition> positions) throws GameException, StatusException;
 
     /**
      * attack at position
@@ -25,8 +24,6 @@ public interface SchiffeVersenken {
      * @throws StatusException can only be called if game has started
      */
     String attackPos(String userName, BattleshipsBoardPosition position) throws GameException, StatusException;
-
-    //String attackPos(BattleshipsBoardPosition position) throws GameException, StatusException;
 
     /**
      *  Sets game boards dimensions, can only be called once

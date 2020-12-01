@@ -16,7 +16,6 @@ public class SVProtocolEngine implements SchiffeVersenken, Runnable, ProtocolEng
 
     private static final String DEFAULT_NAME = "anonymousProtocolEngine";
 
-
     private static final int METHOD_PLACE = 0;
     private static final int METHOD_ATTACK = 1;
     private static final int RESULT_ATTACK = 2;
@@ -107,16 +106,14 @@ public class SVProtocolEngine implements SchiffeVersenken, Runnable, ProtocolEng
             dos.writeUTF(position.getsCoordinate());
             dos.writeInt(position.getiCoordinate());
 
-        try{
-            this.attackWaitThread = Thread.currentThread();
-            Thread.sleep(Long.MAX_VALUE);
-        } catch (InterruptedException e) {
-           System.out.println("attack thread is arouse - result arrived");
-        }
-        this.attackWaitThread = null;
-
-        return this.resultAttack;
-
+            try{
+                this.attackWaitThread = Thread.currentThread();
+                Thread.sleep(Long.MAX_VALUE);
+            } catch (InterruptedException e) {
+                 System.out.println("attack thread is arouse - result arrived");
+            }
+            this.attackWaitThread = null;
+            return this.resultAttack;
         } catch (IOException e) {
             throw new GameException("could not serialize command", e);
         }
@@ -184,21 +181,10 @@ public class SVProtocolEngine implements SchiffeVersenken, Runnable, ProtocolEng
         }
     }
 
-    private void deserializeResultPlace() throws GameException{
+    private void deserializeResultPlace(){
         System.out.println("deserialize result place");
         this.resultPlace = null;
         this.placeWaitThread.interrupt();
-        /*
-
-        DataInputStream dis = new DataInputStream(this.is);
-        try{
-            System.out.println("deserialize result place");
-            this.resultAttack = dis.readUTF();
-        } catch (IOException e) {
-            throw new GameException("Could not deserialize command", e);
-        }
-
-         */
     }
 
     @Override
@@ -213,11 +199,10 @@ public class SVProtocolEngine implements SchiffeVersenken, Runnable, ProtocolEng
     public void close() throws IOException {
         if(this.is != null) this.is.close();
         if(this.os != null) this.os.close();
-
     }
 
     @Override
-    public boolean getOracle() throws StatusException {
+    public boolean getOracle(){
         return this.oracle;
     }
 
@@ -231,9 +216,6 @@ public class SVProtocolEngine implements SchiffeVersenken, Runnable, ProtocolEng
     public void unsubscribeGameSessionEstablishedListener(GameSessionEstablishedListener ocListener) {
         this.sessionCreatedListenerList.remove(ocListener);
     }
-
-
-
 
     @Override
     public void run() {
@@ -262,8 +244,6 @@ public class SVProtocolEngine implements SchiffeVersenken, Runnable, ProtocolEng
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-
         // call listener
         if(this.sessionCreatedListenerList != null && !this.sessionCreatedListenerList.isEmpty()) {
             for(GameSessionEstablishedListener oclistener : this.sessionCreatedListenerList) {

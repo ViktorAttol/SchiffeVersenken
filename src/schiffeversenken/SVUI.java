@@ -25,7 +25,7 @@ public class SVUI implements TCPStreamCreatedListener, GameSessionEstablishedLis
         private String partnerName;
 
     public static void main(String[] args) throws IOException {
-        System.out.println("Welcome to TicTacToe version 0.1");
+        System.out.println("Welcome to Battleships!");
 
         if (args.length < 1) {
             System.err.println("need playerName as parameter");
@@ -261,7 +261,6 @@ public class SVUI implements TCPStreamCreatedListener, GameSessionEstablishedLis
         System.out.println("game session created");
         this.partnerName = partnerName;
         this.gameEngine.setInitializationValues(oracle, partnerName);
-        //System.out.println("Please place your ships!");
         try {
             this.doPrint();
         } catch (IOException e) {
